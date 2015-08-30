@@ -1,6 +1,5 @@
 package ru.pressindex.elasticsearch.top;
 
-
 import com.google.common.collect.Lists;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.plugins.AbstractPlugin;

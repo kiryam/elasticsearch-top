@@ -11,12 +11,10 @@ import org.elasticsearch.index.shard.ShardId;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
 
 public class TopShardService extends AbstractIndexShardComponent implements Closeable {
-    private final ConcurrentHashMap<Engine.Index, HashMap<String, Object>> indexQueue = new ConcurrentHashMap<>();
+    private final ArrayList<Engine.Index> indexQueue = new ArrayList<>();
     private final RealTimeIndexListener realTimePercolatorOperationListener = new RealTimeIndexListener();
     private final ShardIndexingService indexingService;
     private final TopService topService;
@@ -39,12 +37,13 @@ public class TopShardService extends AbstractIndexShardComponent implements Clos
     private class RealTimeIndexListener extends IndexingOperationListener {
         @Override
         public Engine.Index preIndex(Engine.Index index) {
-            HashMap<String, Object> properties = new HashMap<>();
-            properties.put("id", index.id());
-            properties.put("shardId", shardId);
-            properties.put("startedAt", LocalDateTime.now());
-            properties.put("startTime", index.startTime());
-            indexQueue.put(index, properties);
+            //HashMap<String, Object> indexAction = new HashMap<>();
+            //indexAction.put("id", index.id());
+            //indexAction.put("shardId", shardId);
+            //indexAction.put("startedAt", LocalDateTime.now());
+            //indexAction.put("startTime", index.startTime());
+            //indexQueue.add(indexAction);
+            indexQueue.add(index);
 
             return index;
         }
