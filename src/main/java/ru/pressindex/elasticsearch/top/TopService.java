@@ -1,63 +1,81 @@
 package ru.pressindex.elasticsearch.top;
 
+import org.elasticsearch.common.component.AbstractComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
 import org.elasticsearch.index.engine.Engine;
-import org.elasticsearch.index.indexing.IndexingOperationListener;
-import org.elasticsearch.index.indexing.ShardIndexingService;
-import org.elasticsearch.index.settings.IndexSettings;
-import org.elasticsearch.index.shard.AbstractIndexShardComponent;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.rest.*;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class TopService extends AbstractIndexShardComponent implements Closeable, RestHandler {
-    private final ConcurrentHashMap<Engine.Index, HashMap<String, Object>> indexQueries = new ConcurrentHashMap<>();
-    private final RealTimePercolatorOperationListener realTimePercolatorOperationListener = new RealTimePercolatorOperationListener();
-    private final ShardIndexingService indexingService;
+
+public class TopService extends AbstractComponent implements RestHandler {
+    private ConcurrentHashMap<ShardId, ConcurrentHashMap<Engine.Index, HashMap<String, Object>>> indexQueues = new ConcurrentHashMap<>();
 
     @Inject
-    public TopService(ShardId shardId, @IndexSettings Settings indexSettings, ShardIndexingService indexingService, RestController restController) {
-        super(shardId, indexSettings);
-        this.indexingService = indexingService;
-        indexingService.addListener(realTimePercolatorOperationListener);
+    public TopService(Settings Settings, RestController restController) {
+        super(Settings);
 
         restController.registerHandler(RestRequest.Method.GET, "/_top", this);
     }
 
-    public synchronized TopStats stats() {
-        return new TopStats(indexQueries);
+    public void registerIndexQueueList(ShardId shardId, ConcurrentHashMap<Engine.Index, HashMap<String, Object>> indexQuery){
+        indexQueues.put(shardId, indexQuery);
     }
 
-    @Override
-    public void close() throws IOException {
-        indexingService.removeListener(realTimePercolatorOperationListener);
+    public void unregisterIndexQueueList(ShardId shardId){
+        indexQueues.remove(shardId);
     }
 
     @Override
     public void handleRequest(RestRequest request, RestChannel channel) throws Exception {
-        channel.sendResponse(new BytesRestResponse(RestStatus.OK, stats().toString()));
-    }
+        XContentBuilder builder = XContentFactory.jsonBuilder().prettyPrint();
+        HashMap<String,  HashMap<ShardId, ArrayList<HashMap<String, Object>>>> indexQueriesByIndex = new HashMap<>();
 
-    private class RealTimePercolatorOperationListener extends IndexingOperationListener {
-        @Override
-        public Engine.Index preIndex(Engine.Index index) {
-            HashMap<String, Object> properties = new HashMap<>();
-            properties.put("startedAt", LocalDateTime.now());
-            indexQueries.put(index, properties);
+        for(Map.Entry<ShardId, ConcurrentHashMap<Engine.Index, HashMap<String, Object>>> queryEntry: indexQueues.entrySet()){
+            ShardId shardId = queryEntry.getKey();
 
-            return index;
+            for(Map.Entry<Engine.Index, HashMap<String, Object>> entry : queryEntry.getValue().entrySet()) {
+
+                if (!indexQueriesByIndex.containsKey(shardId.getIndex())) {
+                    indexQueriesByIndex.put(shardId.getIndex(), new HashMap<ShardId, ArrayList<HashMap<String, Object>>>());
+                }
+
+                if (!indexQueriesByIndex.get(shardId.getIndex()).containsKey(entry.getKey())) {
+                    indexQueriesByIndex.get(shardId.getIndex()).put(shardId, new ArrayList<HashMap<String, Object>>());
+                }
+                indexQueriesByIndex.get(shardId.getIndex()).get(shardId).add(entry.getValue());
+            }
         }
 
-        @Override
-        public void postIndex(Engine.Index index) {
-            indexQueries.remove(index);
-            super.postIndex(index);
+        builder.startObject("indices");
+
+        for (Map.Entry<String, HashMap<ShardId, ArrayList<HashMap<String, Object>>>> entry : indexQueriesByIndex.entrySet()){
+            builder.startArray(entry.getKey());
+
+            for(Map.Entry<ShardId, ArrayList<HashMap<String, Object>>> shardEntry : entry.getValue().entrySet()){
+
+                for(HashMap<String, Object> query : shardEntry.getValue()){
+                    builder.startObject();
+                    for( Map.Entry<String, Object> en : query.entrySet() ){
+                        builder.field(en.getKey(), en.getValue());
+                    }
+
+                    builder.endObject();
+
+                }
+
+            }
+
+            builder.endArray();
         }
+        builder.endObject();
+        channel.sendResponse(new BytesRestResponse(RestStatus.OK, builder.string()));
     }
 }

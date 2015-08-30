@@ -17,9 +17,16 @@ public class TopPlugin extends AbstractPlugin {
     }
 
     @Override
-    public Collection<Class<? extends Module>> shardModules() {
+    public Collection<Class<? extends Module>> modules() {
         Collection<Class<? extends Module>> modules = Lists.newArrayList();
         modules.add(TopModule.class);
+        return modules;
+    }
+
+    @Override
+    public Collection<Class<? extends Module>> shardModules() {
+        Collection<Class<? extends Module>> modules = Lists.newArrayList();
+        modules.add(TopShardModule.class);
         return modules;
     }
 }

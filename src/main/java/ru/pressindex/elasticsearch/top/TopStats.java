@@ -3,7 +3,6 @@ package ru.pressindex.elasticsearch.top;
 import org.elasticsearch.common.xcontent.ToXContent;
 import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.index.engine.Engine;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,9 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 public class TopStats implements ToXContent {
-    private final ConcurrentHashMap<Engine.Index, HashMap<String, Object>> indexQueries;
+    private final ConcurrentHashMap<String, HashMap<String, Object>> indexQueries;
 
-    public TopStats(ConcurrentHashMap<Engine.Index, HashMap<String, Object>> indexQueries) {
+    public TopStats(ConcurrentHashMap<String, HashMap<String, Object>> indexQueries) {
         this.indexQueries = indexQueries;
     }
 
@@ -36,10 +35,10 @@ public class TopStats implements ToXContent {
     public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
         ArrayList<HashMap<String, Object>> queries = new ArrayList<>();
 
-        for( Map.Entry<Engine.Index, HashMap<String, Object>> entry : indexQueries.entrySet() ){
+        for( Map.Entry<String, HashMap<String, Object>> entry : indexQueries.entrySet() ){
             HashMap<String, Object> query = entry.getValue();
-            query.put("id", entry.getKey().id());
-            query.put("runnedNano", System.nanoTime() - entry.getKey().startTime());
+            query.put("id", entry.getKey());
+            query.put("runnedNano", System.nanoTime() - (Long)entry.getValue().get("startTime"));
             queries.add(query);
         }
 

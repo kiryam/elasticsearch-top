@@ -15,12 +15,7 @@
     <version>7</version>
 </parent>
 
-
 <packaging>jar</packaging>
-
-<properties>
-    <elasticsearch.version>1.7.2</elasticsearch.version>
-</properties>
 
 <dependencies>
     <dependency>
