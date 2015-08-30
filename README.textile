@@ -1,5 +1,9 @@
 h1. unstable
 
+h2. Known bugs
+
+If index action will failed - Index action will freeze in top. To clear run curl -XGET localhost:9200/_top/clear
+
 h1. Show current indexing documents in ElasticSearch
 
 Developed for find long running indexing documents.

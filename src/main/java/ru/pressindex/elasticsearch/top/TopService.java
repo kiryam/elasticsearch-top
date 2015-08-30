@@ -24,6 +24,17 @@ public class TopService extends AbstractComponent implements RestHandler {
         super(Settings);
 
         restController.registerHandler(RestRequest.Method.GET, "/_top", this);
+
+        //FIXME https://github.com/elastic/elasticsearch/issues/13202
+        restController.registerHandler(RestRequest.Method.GET, "/_top/clear", new RestHandler() {
+            @Override
+            public void handleRequest(RestRequest request, RestChannel channel) throws Exception {
+                for( Map.Entry<ShardId, ArrayList<Engine.Index>> entry : indexQueues.entrySet() ){
+                    entry.getValue().clear();
+                }
+                channel.sendResponse(new BytesRestResponse(RestStatus.OK, "Top cleared"));
+            }
+        });
     }
 
     public void registerIndexQueueList(ShardId shardId, ArrayList<Engine.Index> indexQueue){

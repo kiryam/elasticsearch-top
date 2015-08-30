@@ -37,12 +37,6 @@ public class TopShardService extends AbstractIndexShardComponent implements Clos
     private class RealTimeIndexListener extends IndexingOperationListener {
         @Override
         public Engine.Index preIndex(Engine.Index index) {
-            //HashMap<String, Object> indexAction = new HashMap<>();
-            //indexAction.put("id", index.id());
-            //indexAction.put("shardId", shardId);
-            //indexAction.put("startedAt", LocalDateTime.now());
-            //indexAction.put("startTime", index.startTime());
-            //indexQueue.add(indexAction);
             indexQueue.add(index);
 
             return index;
@@ -50,7 +44,10 @@ public class TopShardService extends AbstractIndexShardComponent implements Clos
 
         @Override
         public void postIndex(Engine.Index index) {
-            indexQueue.remove(index);
+            if (indexQueue.contains(index)){
+                indexQueue.remove(index);
+            }
+
             super.postIndex(index);
         }
     }
