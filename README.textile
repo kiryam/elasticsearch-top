@@ -1,0 +1,34 @@
+h1. unstable
+
+h1. Show current indexing documents in ElasticSearch
+
+Developed for find long running indexing documents.
+In future planned: top search requests, UI
+
+h2. Compatibility
+
+The following table shows the compatible versions of Elasticsearch and Top Plugin.
+
+|_. Top Plugin |_.  Elasticsearch   |_. URL  |
+| master                          | 1.7.x  | https://dl.dropboxusercontent.com/u/1003531/top-plugin-1.0-SNAPSHOT.zip  |
+
+
+h2. Installation before 2.0
+
+<pre>
+bin/plugin -install top-plugin -url https://dl.dropboxusercontent.com/u/1003531/top-plugin-1.0-SNAPSHOT.zip
+</pre>
+
+
+h3. Usage
+
+Current version show only indexing requests in queriyng node (Example: if you have 2 nodes and you want to get info about long-running index-dcuments you need to ask all nodes separately. curl -XGET node1:9200/_top, curl -XGET node2:9200/_top etc   )
+
+<pre>
+curl -XGET localhost:9200/_top 
+</pre>
+
+answer:
+<pre>{
+  "index_queries" : [ ]
+}</pre>
