@@ -1,7 +1,8 @@
 h1. unstable
 
 h1. Show current indexing documents in ElasticSearch
-Writed for find long running indexing documents.
+
+Developed for find long running indexing documents.
 In future planned: top search requests, UI
 
 h2. Compatibility
